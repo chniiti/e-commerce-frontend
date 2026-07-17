@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrendDrop — Landing Page Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --molten:#E8A33D;
+    --molten-dim:#8a5f22;
+    --cyan:#3FD9E8;
+  }
+  html[data-theme="dark"]{
+    --bg:#0B0D10;
+    --surface:#171B21;
+    --surface-2:#1E232B;
+    --text:#F5F3EE;
+    --text-muted:#7C8794;
+    --border:rgba(255,255,255,0.08);
+    --glow-op:0.35;
+    --shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  html[data-theme="light"]{
+    --bg:#EFEEE8;
+    --surface:#FFFFFF;
+    --surface-2:#F7F6F2;
+    --text:#1B1D21;
+    --text-muted:#767A82;
+    --border:rgba(20,20,20,0.08);
+    --glow-op:0.16;
+    --shadow:0 20px 40px -18px rgba(20,20,20,0.22);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:'Inter', sans-serif;
+    overflow-x:hidden; transition:background-color .4s ease, color .4s ease;
+  }
+  ::selection{background:var(--molten); color:#0B0D10;}
+
+  .iris-overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:9999;
+    clip-path:circle(150% at 50% 50%);
+    animation:irisReveal 1.5s cubic-bezier(.65,0,.35,1) forwards; animation-delay:.15s;
+    pointer-events:none;
+  }
+  @keyframes irisReveal{ to{ clip-path:circle(0% at 50% 50%); } }
+  @media (prefers-reduced-motion: reduce){ .iris-overlay{ display:none; } }
+
+  nav{ display:flex; justify-content:space-between; align-items:center; padding:28px 6%; position:relative; z-index:10; }
+  .logo{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:20px; letter-spacing:1px; }
+  .logo span{ color:var(--molten); }
+  .nav-right{ display:flex; align-items:center; gap:28px; }
+  .nav-links{ display:flex; gap:32px; font-size:14px; color:var(--text-muted); }
+
+  .theme-toggle{
+    display:flex; align-items:center; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:20px; padding:3px; cursor:pointer; width:56px; height:30px; position:relative;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .theme-toggle .knob{
+    width:24px; height:24px; border-radius:50%; position:relative; z-index:2;
+    transition:transform .35s cubic-bezier(.65,0,.35,1), background .35s ease, box-shadow .35s ease;
+  }
+  html[data-theme="dark"] .theme-toggle .knob{
+    transform:translateX(26px);
+    background:radial-gradient(circle at 65% 35%, #dfe3e8, #aab1bc 70%);
+    box-shadow:inset -4px -2px 0 -1px rgba(0,0,0,0.18);
+  }
+  html[data-theme="light"] .theme-toggle .knob{
+    transform:translateX(0);
+    background:radial-gradient(circle at 35% 30%, #ffe8b8, var(--molten) 70%);
+    box-shadow:0 0 8px rgba(232,163,61,0.5);
+  }
+  html[data-theme="dark"] .theme-toggle .knob::before,
+  html[data-theme="dark"] .theme-toggle .knob::after{
+    content:''; position:absolute; width:3px; height:3px; border-radius:50%; background:rgba(0,0,0,0.15);
+  }
+  html[data-theme="dark"] .theme-toggle .knob::before{ top:6px; left:5px; }
+  html[data-theme="dark"] .theme-toggle .knob::after{ top:13px; left:12px; }
+  html[data-theme="light"] .theme-toggle .knob::before,
+  html[data-theme="light"] .theme-toggle .knob::after{ content:none; }
+
+  .hero{
+    display:grid; grid-template-columns:1fr 1fr; align-items:center; min-height:82vh; padding:14px 6% 30px; gap:36px;
+  }
+
+  .stage{ position:relative; height:460px; display:flex; align-items:center; justify-content:center; perspective:1200px; }
+  .spotlight{
+    position:absolute; width:480px; height:480px; border-radius:50%;
+    background:radial-gradient(circle, rgba(232,163,61,var(--glow-op)) 0%, rgba(232,163,61,0.05) 45%, transparent 72%);
+    animation:spotlightPulse 5s ease-in-out infinite;
+  }
+  @keyframes spotlightPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+
+  .rotator{
+    width:320px; height:320px; transform-style:preserve-3d;
+    animation:autoRotate 16s linear infinite;
+  }
+  .rotator.paused{ animation-play-state:paused; }
+  @keyframes autoRotate{ from{ transform:rotateY(0deg);} to{ transform:rotateY(360deg);} }
+  .tilt-inner{ width:100%; height:100%; transform-style:preserve-3d; transition:transform .15s ease-out; }
+
+  .product-photo-stack{ position:relative; width:280px; height:340px; cursor:pointer; }
+
+  .zoom-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:1000;
+    display:none; align-items:center; justify-content:center;
+  }
+  .zoom-backdrop.open{ display:flex; animation:fadeIn .25s ease; }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .zoom-modal{
+    position:relative; width:min(560px,88vw); height:min(560px,78vh);
+    background:var(--surface); border-radius:20px; overflow:hidden;
+    cursor:zoom-in; border:1px solid var(--border);
+  }
+  .zoom-modal.zoomed{ cursor:grab; }
+  .zoom-modal.zoomed.dragging{ cursor:grabbing; }
+  .zoom-icon-btn{
+    position:absolute; bottom:14px; right:14px; width:40px; height:40px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; z-index:5; box-shadow:0 6px 16px rgba(0,0,0,0.12); transition:transform .15s ease;
+  }
+  .zoom-icon-btn:hover{ transform:scale(1.08); }
+  .zoom-icon-btn .glass{ width:14px; height:14px; border:2px solid var(--text); border-radius:50%; position:relative; }
+  .zoom-icon-btn .glass::after{ content:''; position:absolute; width:2px; height:8px; background:var(--text); bottom:-7px; right:-2px; transform:rotate(45deg); border-radius:2px; }
+
+  .zoom-photo{ position:absolute; top:0; left:0; right:0; bottom:64px; transition:transform .12s ease-out; transform-origin:center center; }
+  .zoom-buy-bar{
+    position:absolute; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--border);
+    padding:14px 16px; display:flex; align-items:center; justify-content:space-between; z-index:6;
+  }
+  .zoom-buy-bar .zoom-price{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--molten); }
+  .zoom-buy-bar .buy-btn{ padding:10px 24px; font-size:13px; }
+  .zoom-close{
+    position:absolute; top:14px; right:14px; width:36px; height:36px; border-radius:50%;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text); font-size:16px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5;
+  }
+  .zoom-hint{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);
+    background:var(--surface-2); padding:6px 14px; border-radius:20px; border:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .zoom-swatches{ position:absolute; top:14px; left:14px; display:flex; gap:8px; z-index:5; }
+  .zoom-swatches .swatch{ width:24px; height:24px; }
+  .product-photo{
+    position:absolute; inset:0; border-radius:18px; opacity:0; transform:scale(0.96);
+    transition:opacity 0.5s ease, transform 0.5s cubic-bezier(.34,1.56,.64,1);
+    filter:drop-shadow(0 30px 30px rgba(0,0,0,0.35));
+    overflow:hidden;
+  }
+  .product-photo.active{ opacity:1; transform:scale(1); z-index:2; }
+  .product-photo .body{
+    position:absolute; left:12%; right:12%; top:32%; bottom:8%; border-radius:16px 16px 22px 22px;
+  }
+  .product-photo .flap{
+    position:absolute; left:14%; right:14%; top:24%; height:22%; border-radius:14px 14px 6px 6px;
+  }
+  .product-photo .strap{
+    position:absolute; left:28%; right:28%; top:2%; height:26%; border:7px solid; border-bottom:none;
+    border-radius:60px 60px 0 0; opacity:0.9;
+  }
+  .product-photo .hardware{
+    position:absolute; left:50%; top:35%; width:11px; height:11px; margin-left:-5.5px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #FFE8B8, #C4832A 65%, #8a5f22);
+    box-shadow:0 1px 3px rgba(0,0,0,0.4); z-index:3;
+  }
+  .product-photo .sheen{
+    position:absolute; inset:0; background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.22) 48%, transparent 60%);
+    pointer-events:none;
+  }
+  .swap-anim{ animation:swapPulse .5s ease; }
+  @keyframes swapPulse{ 0%{transform:scale(1) rotateZ(0);} 40%{transform:scale(1.05) rotateZ(-2deg);} 100%{transform:scale(1) rotateZ(0);} }
+
+  .reflection{
+    position:absolute; bottom:36px; width:220px; height:40px; border-radius:50%;
+    background:radial-gradient(ellipse, rgba(0,0,0,0.35) 0%, transparent 72%);
+  }
+  html[data-theme="light"] .reflection{ background:radial-gradient(ellipse, rgba(20,20,20,0.18) 0%, transparent 72%); }
+
+  .particles{ position:absolute; inset:0; pointer-events:none; }
+  .particle{ position:absolute; width:3px; height:3px; border-radius:50%; background:var(--molten); opacity:0; animation:drift linear infinite; }
+  @keyframes drift{ 0%{transform:translateY(0);opacity:0;} 10%{opacity:.7;} 90%{opacity:.35;} 100%{transform:translateY(-420px) translateX(18px);opacity:0;} }
+
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:1.5px; color:var(--cyan); text-transform:uppercase; margin-bottom:20px; }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); animation:livePulse 1.8s ease-out infinite; }
+  @keyframes livePulse{ 0%{box-shadow:0 0 0 0 rgba(63,217,232,0.5);} 70%{box-shadow:0 0 0 8px rgba(63,217,232,0);} 100%{box-shadow:0 0 0 0 rgba(63,217,232,0);} }
+
+  h1{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:48px; line-height:1.02; margin-bottom:12px; letter-spacing:-1px; }
+  .desc{ color:var(--text-muted); font-size:14px; line-height:1.55; max-width:420px; margin-bottom:22px; }
+
+  .countdown{ display:flex; gap:12px; margin-bottom:22px; }
+  .countdown div{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; text-align:center; min-width:58px; }
+  .countdown span{ display:block; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:21px; font-variant-numeric:tabular-nums; }
+  .countdown label{ font-size:9px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
+
+  .variant-label{ font-size:11px; color:var(--text-muted); margin-bottom:8px; font-family:'JetBrains Mono',monospace; letter-spacing:0.5px; }
+  .variants{ display:flex; gap:12px; margin-bottom:20px; }
+  .swatch{ width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition:transform .15s ease, border-color .15s ease; position:relative; }
+  .swatch.active{ border-color:var(--molten); transform:scale(1.14); }
+  .swatch:hover{ transform:scale(1.14); }
+  .swatch .name-tip{
+    position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-size:10px; white-space:nowrap;
+    background:var(--surface); border:1px solid var(--border); padding:3px 8px; border-radius:6px; opacity:0; transition:opacity .2s; pointer-events:none;
+  }
+  .swatch:hover .name-tip{ opacity:1; }
+
+  .price-row{ display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
+  .price{ font-family:'Space Grotesk', sans-serif; font-size:30px; font-weight:700; }
+  .price-old{ font-size:15px; color:var(--text-muted); text-decoration:line-through; }
+
+  .stock-bar{ height:5px; border-radius:4px; background:var(--surface); overflow:hidden; margin-bottom:6px; max-width:340px; }
+  .stock-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg, var(--molten-dim), var(--molten)); animation:stockGlow 2.4s ease-in-out infinite; }
+  @keyframes stockGlow{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.3);} }
+  .stock-label{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--molten); margin-bottom:20px; }
+
+  .buy-btn{ font-family:'Inter', sans-serif; font-weight:600; font-size:15px; background:var(--molten); color:#0B0D10; border:none; padding:16px 36px; border-radius:10px; cursor:pointer; animation:buyPulse 2.6s ease-in-out infinite; transition:transform .12s ease; }
+  .buy-btn:hover{ transform:translateY(-2px); }
+  .buy-btn:active{ transform:scale(0.98); }
+  @keyframes buyPulse{ 0%,100%{box-shadow:0 0 0 0 rgba(232,163,61,0.3);} 50%{box-shadow:0 0 24px 4px rgba(232,163,61,0.3);} }
+
+  .trust-row{ display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; }
+  .trust-row span{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+  .trust-row .dot{ width:5px; height:5px; border-radius:50%; background:var(--molten); display:inline-block; }
+
+  .sticky-buy{
+    position:fixed; left:0; right:0; bottom:0; z-index:500;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:12px 6%; display:flex; align-items:center; justify-content:space-between;
+    transform:translateY(100%); transition:transform .3s cubic-bezier(.65,0,.35,1);
+    box-shadow:0 -8px 24px rgba(0,0,0,0.08);
+  }
+  .sticky-buy.show{ transform:translateY(0); }
+  .sticky-buy .info{ display:flex; flex-direction:column; }
+  .sticky-buy .info .name{ font-size:13px; font-weight:500; }
+  .sticky-buy .info .price{ font-size:13px; color:var(--molten); font-family:'JetBrains Mono',monospace; font-weight:700; }
+  .sticky-buy .buy-btn{ padding:11px 28px; font-size:14px; }
+
+  .toast{
+    position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-20px); z-index:2000;
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--molten);
+    padding:12px 20px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease; box-shadow:0 12px 30px rgba(0,0,0,0.15);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .section-label{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:16px; }
+  .panel{ max-width:480px; background:var(--surface); backdrop-filter:blur(12px); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .panel-header{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:16px; font-weight:500; }
+  .pulse{ width:8px; height:8px; border-radius:50%; background:var(--cyan); animation:livePulse 1.8s ease-out infinite; }
+  .order-toast{ background:var(--surface-2); border-radius:12px; padding:14px 16px; border-left:2px solid var(--molten); display:flex; justify-content:space-between; align-items:center; }
+  .order-toast .info p:first-child{ font-size:13px; font-weight:500; margin-bottom:4px; }
+  .order-toast .info p:last-child{ font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono', monospace; }
+  .order-toast .amount{ font-family:'JetBrains Mono', monospace; color:var(--molten); font-size:14px; }
+
+  @media (max-width:860px){
+    .hero{ grid-template-columns:1fr; }
+    h1{ font-size:36px; }
+    .stage{ height:340px; order:-1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="iris-overlay"></div>
+
+<nav>
+  <div class="logo">TREND<span>DROP</span></div>
+  <div class="nav-right">
+    <div class="nav-links"><span>How it works</span><span>Track order</span></div>
+    <div class="theme-toggle" id="themeToggle">
+      <div class="knob"></div>
+    </div>
+  </div>
+</nav>
+
+<main class="hero">
+  <div class="stage" id="stage">
+    <div class="spotlight"></div>
+    <div class="reflection"></div>
+    <div class="rotator" id="rotator">
+      <div class="tilt-inner" id="tilt">
+        <div class="product-photo-stack" id="photoStack">
+          <!-- In production: each of these becomes a real <img src="[photographed variant image]">
+               that the Trends Responsible uploads per color in the product wizard's Media step.
+               The crossfade mechanism below (opacity + scale transition) stays identical —
+               only the content (illustrated div → real photo) changes. -->
+          <div class="product-photo active" data-name="Noir Black">
+            <div class="strap" style="border-color:#3a3a3a;"></div>
+            <div class="flap" style="background:linear-gradient(160deg,#2c2c2c,#141414 60%,#0a0a0a);"></div>
+            <div class="body" style="background:linear-gradient(165deg,#2a2a2a,#121212 55%,#080808);"></div>
+            <div class="hardware"></div>
+            <div class="sheen"></div>
+          </div>
+          <div class="product-photo" data-name="Cognac Tan">
+            <div class="strap" style="border-color:#6b4a28;"></div>
+            <div class="flap" style="background:linear-gradient(160deg,#c68f56,#a06b34 60%,#7a4f22);"></div>
+            <div class="body" style="background:linear-gradient(165deg,#bd8850,#96632e 55%,#6e4720);"></div>
+            <div class="hardware"></div>
+            <div class="sheen"></div>
+          </div>
+          <div class="product-photo" data-name="Emerald">
+            <div class="strap" style="border-color:#1c3128;"></div>
+            <div class="flap" style="background:linear-gradient(160deg,#3f6b57,#274839 60%,#152b21);"></div>
+            <div class="body" style="background:linear-gradient(165deg,#385f4d,#213f32 55%,#12261d);"></div>
+            <div class="hardware"></div>
+            <div class="sheen"></div>
+          </div>
+          <div class="product-photo" data-name="Burgundy">
+            <div class="strap" style="border-color:#3d181e;"></div>
+            <div class="flap" style="background:linear-gradient(160deg,#7a3540,#5c2029 60%,#3d141a);"></div>
+            <div class="body" style="background:linear-gradient(165deg,#712f3a,#521c24 55%,#371217);"></div>
+            <div class="hardware"></div>
+            <div class="sheen"></div>
+          </div>
+          <div class="product-photo" data-name="Ivory">
+            <div class="strap" style="border-color:#b3ab98;"></div>
+            <div class="flap" style="background:linear-gradient(160deg,#f2ede0,#e3dbc7 60%,#cfc4a9);"></div>
+            <div class="body" style="background:linear-gradient(165deg,#ede6d4,#d9d0b8 55%,#c3b89b);"></div>
+            <div class="hardware"></div>
+            <div class="sheen"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="particles" id="particles"></div>
+    <div class="zoom-icon-btn" id="zoomIconBtn"><span class="glass"></span></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="eyebrow"><span class="live-dot"></span> This week's trend · Doha, Qatar</div>
+    <h1>Aurea Weekender</h1>
+    <p class="desc">The bag everyone's about to ask you where you got. First 200 units land in Qatar this week — reserved units ship within 48 hours.</p>
+
+    <div class="countdown">
+      <div><span id="hh">04</span><label>hrs</label></div>
+      <div><span id="mm">12</span><label>min</label></div>
+      <div><span id="ss">47</span><label>sec</label></div>
+    </div>
+
+    <p class="variant-label">Colour — click to preview</p>
+    <div class="variants" id="variants">
+      <div class="swatch active" data-photo="Noir Black" style="background:#1a1a1a;"><span class="name-tip">Noir Black</span></div>
+      <div class="swatch" data-photo="Cognac Tan" style="background:#a97a4b;"><span class="name-tip">Cognac Tan</span></div>
+      <div class="swatch" data-photo="Emerald" style="background:#2f4d3f;"><span class="name-tip">Emerald</span></div>
+      <div class="swatch" data-photo="Burgundy" style="background:#5e2530;"><span class="name-tip">Burgundy</span></div>
+      <div class="swatch" data-photo="Ivory" style="background:#e8e2d5;"><span class="name-tip">Ivory</span></div>
+    </div>
+
+    <div class="price-row">
+      <span class="price">QAR 1,850</span>
+      <span class="price-old">QAR 2,190</span>
+    </div>
+
+    <div class="stock-bar"><div class="stock-fill" style="width:22%"></div></div>
+    <p class="stock-label">22% left · 156 reserved today</p>
+
+    <button class="buy-btn" id="mainBuyBtn">Buy now</button>
+
+    <div class="trust-row">
+      <span><i class="dot"></i>48h delivery in Qatar</span>
+      <span><i class="dot"></i>Secure payment</span>
+      <span><i class="dot"></i>First in GCC</span>
+    </div>
+  </div>
+</main>
+
+<div class="zoom-backdrop" id="zoomBackdrop">
+  <div class="zoom-modal" id="zoomModal">
+    <div class="zoom-close" id="zoomClose">&times;</div>
+    <div class="zoom-swatches" id="zoomSwatches"></div>
+    <div class="zoom-hint">Scroll or pinch to zoom · drag to pan</div>
+    <div class="zoom-photo" id="zoomPhoto"></div>
+    <div class="zoom-buy-bar">
+      <span class="zoom-price">QAR 1,850</span>
+      <button class="buy-btn" id="zoomBuyBtn">Buy now</button>
+    </div>
+  </div>
+</div>
+
+<div class="sticky-buy" id="stickyBuy">
+  <div class="info"><span class="name">Aurea Weekender</span><span class="price">QAR 1,850</span></div>
+  <button class="buy-btn" id="stickyBuyBtn">Buy now</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<section class="dashboard-preview">
+  <p class="section-label">Admin / trends dashboard — live notification</p>
+  <div class="panel">
+    <div class="panel-header"><span class="pulse"></span> Live orders</div>
+    <div class="order-toast">
+      <div class="info">
+        <p>Aurea Weekender · Cognac Tan</p>
+        <p>Pearl Qatar, Doha · #TD-9027</p>
+      </div>
+      <div class="amount">QAR 1,850</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Theme toggle
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // Countdown
+  let total = 4*3600 + 12*60 + 47;
+  setInterval(() => {
+    if(total <= 0) return;
+    total--;
+    document.getElementById('hh').textContent = String(Math.floor(total/3600)).padStart(2,'0');
+    document.getElementById('mm').textContent = String(Math.floor((total%3600)/60)).padStart(2,'0');
+    document.getElementById('ss').textContent = String(total%60).padStart(2,'0');
+  }, 1000);
+
+  // Drag-to-rotate — simulates a 360 spin.
+  const stage = document.getElementById('stage');
+  const tilt = document.getElementById('tilt');
+  const rotator = document.getElementById('rotator');
+  // In production this same drag delta indexes into a real photographed frame
+  // sequence (24-36 shots around the object) instead of a CSS transform —
+  // this is the industry-standard "spin viewer" pattern for product drops.
+  let dragging = false, hasDragged = false, startX = 0, startY = 0, currentRotY = 0, currentRotX = 0;
+
+  const photoStack = document.getElementById('photoStack');
+
+  function pointerDown(e){
+    dragging = true; hasDragged = false;
+    startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    startY = (e.touches ? e.touches[0].clientY : e.clientY);
+    rotator.classList.add('paused');
+  }
+  function pointerMove(e){
+    if(!dragging) return;
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const y = (e.touches ? e.touches[0].clientY : e.clientY);
+    const dx = x - startX, dy = y - startY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) hasDragged = true;
+    currentRotY = Math.max(-35, Math.min(35, dx * 0.35));
+    currentRotX = Math.max(-18, Math.min(18, -dy * 0.25));
+    tilt.style.transform = `rotateY(${currentRotY}deg) rotateX(${currentRotX}deg)`;
+    tilt.style.filter = `brightness(${1 + Math.abs(currentRotY)/220})`;
+  }
+  function pointerUp(){
+    if(!dragging) return;
+    dragging = false;
+    tilt.style.transform = 'rotateY(0deg) rotateX(0deg)';
+    tilt.style.filter = 'brightness(1)';
+    setTimeout(() => rotator.classList.remove('paused'), 300);
+    if(!hasDragged){ cycleColor(); }
+  }
+  stage.addEventListener('mousedown', pointerDown);
+  stage.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerUp);
+  stage.addEventListener('touchstart', pointerDown, {passive:true});
+  stage.addEventListener('touchmove', pointerMove, {passive:true});
+  window.addEventListener('touchend', pointerUp);
+
+  // ===== Zoom modal =====
+  const zoomBackdrop = document.getElementById('zoomBackdrop');
+  const zoomModal = document.getElementById('zoomModal');
+  const zoomPhoto = document.getElementById('zoomPhoto');
+  const zoomSwatches = document.getElementById('zoomSwatches');
+  let zoomScale = 1, zoomX = 0, zoomY = 0, zoomDragging = false, zoomStartX = 0, zoomStartY = 0;
+
+  function currentPhotoHTML(){
+    const active = document.querySelector('.product-photo.active');
+    return active ? active.innerHTML : '';
+  }
+
+  function openZoom(){
+    zoomPhoto.innerHTML = currentPhotoHTML();
+    zoomScale = 1; zoomX = 0; zoomY = 0;
+    applyZoomTransform();
+    zoomBackdrop.classList.add('open');
+    buildZoomSwatches();
+  }
+  function closeZoom(){ zoomBackdrop.classList.remove('open'); }
+
+  function applyZoomTransform(){
+    zoomPhoto.style.transform = `translate(${zoomX}px, ${zoomY}px) scale(${zoomScale})`;
+    zoomModal.classList.toggle('zoomed', zoomScale > 1);
+  }
+
+  zoomModal.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomScale = Math.max(1, Math.min(2.6, zoomScale - e.deltaY * 0.0015));
+    if(zoomScale === 1){ zoomX = 0; zoomY = 0; }
+    applyZoomTransform();
+  });
+  zoomModal.addEventListener('click', (e) => {
+    if(e.target === zoomModal || e.target === zoomPhoto){
+      if(zoomScale === 1){ zoomScale = 1.8; applyZoomTransform(); }
+    }
+  });
+  zoomModal.addEventListener('mousedown', (e) => {
+    if(zoomScale <= 1) return;
+    zoomDragging = true; zoomStartX = e.clientX - zoomX; zoomStartY = e.clientY - zoomY;
+    zoomModal.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', (e) => {
+    if(!zoomDragging) return;
+    zoomX = e.clientX - zoomStartX; zoomY = e.clientY - zoomStartY;
+    applyZoomTransform();
+  });
+  window.addEventListener('mouseup', () => { zoomDragging = false; zoomModal.classList.remove('dragging'); });
+
+  // Clicking the product itself cycles through colors — a quick way to browse
+  function cycleColor(){
+    const swatches = Array.from(document.querySelectorAll('#variants .swatch'));
+    const activeIdx = swatches.findIndex(s => s.classList.contains('active'));
+    const next = swatches[(activeIdx + 1) % swatches.length];
+    next.click();
+  }
+
+  // Dedicated zoom icon opens the popup — separate from the color-cycle click
+  const zoomIconBtn = document.getElementById('zoomIconBtn');
+  zoomIconBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+  zoomIconBtn.addEventListener('touchstart', (e) => e.stopPropagation());
+  zoomIconBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openZoom();
+  });
+
+  // ===== Toast + buy actions =====
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+  function handleBuy(){
+    showToast('Reservation started — enter your details to confirm');
+    closeZoom();
+  }
+  document.getElementById('mainBuyBtn').addEventListener('click', handleBuy);
+  document.getElementById('stickyBuyBtn').addEventListener('click', handleBuy);
+  document.getElementById('zoomBuyBtn').addEventListener('click', handleBuy);
+
+  // Sticky buy bar — stays available once the main buy button scrolls out of view
+  const stickyBuy = document.getElementById('stickyBuy');
+  const mainBuyBtn = document.getElementById('mainBuyBtn');
+  new IntersectionObserver((entries) => {
+    entries.forEach(entry => stickyBuy.classList.toggle('show', !entry.isIntersecting));
+  }, { threshold: 0 }).observe(mainBuyBtn);
+
+  document.getElementById('zoomClose').addEventListener('click', closeZoom);
+  zoomBackdrop.addEventListener('click', (e) => { if(e.target === zoomBackdrop) closeZoom(); });
+  window.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeZoom(); });
+
+  function buildZoomSwatches(){
+    zoomSwatches.innerHTML = '';
+    document.querySelectorAll('#variants .swatch').forEach(orig => {
+      const dot = document.createElement('div');
+      dot.className = 'swatch' + (orig.classList.contains('active') ? ' active' : '');
+      dot.style.background = orig.style.background;
+      dot.addEventListener('click', () => {
+        orig.click();
+        zoomPhoto.innerHTML = currentPhotoHTML();
+        zoomSwatches.querySelectorAll('.swatch').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+      });
+      zoomSwatches.appendChild(dot);
+    });
+  }
+
+  // Color swap — crossfades to the real product photo for that variant
+  // (in production, .product-photo becomes a real <img>; this logic doesn't change)
+  document.querySelectorAll('.swatch').forEach(s => {
+    s.addEventListener('click', () => {
+      document.querySelectorAll('.swatch').forEach(o => o.classList.remove('active'));
+      s.classList.add('active');
+      document.querySelectorAll('.product-photo').forEach(p => {
+        p.classList.toggle('active', p.dataset.name === s.dataset.photo);
+      });
+    });
+  });
+
+  // Ambient particles
+  const particleContainer = document.getElementById('particles');
+  for(let i=0; i<16; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random()*100 + '%';
+    p.style.bottom = '20px';
+    p.style.animationDuration = (5 + Math.random()*5) + 's';
+    p.style.animationDelay = (Math.random()*5) + 's';
+    particleContainer.appendChild(p);
+  }
+</script>
+
+</body>
+</html>

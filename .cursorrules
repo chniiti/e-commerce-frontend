@@ -1,0 +1,181 @@
+PROJECT CONTEXT
+
+Build the frontend for TrendDrop, a trend-based reservation e-commerce platform for Qatar. It connects to an existing Spring Boot backend (JWT auth, role-based access: ADMIN, TRENDS_RESPONSIBLE, CUSTOMER) exposing REST endpoints plus a WebSocket channel for real-time order notifications.
+
+Three experiences in one app:
+
+
+Public storefront — customers browse trending products and reserve them, no login required.
+Trends Responsible dashboard — manage trend research, create/edit products, view stock, view own orders.
+Admin dashboard — full access: user management, product approval, stock, orders, audit log, live order notifications.
+
+
+Build with Next.js 14+ (App Router), TypeScript, Tailwind CSS. Code must be clean, fast-loading (this app runs paid social ad traffic to its product pages — page speed directly affects conversion), and properly typed end to end.
+
+
+TECH STACK & DEPENDENCIES
+
+
+next (App Router, TypeScript)
+tailwindcss + shadcn/ui (component primitives — Button, Input, Dialog, Table, Badge, Toast)
+@tanstack/react-query — all server data fetching/caching, not raw useEffect fetches
+zustand — lightweight client state (auth user, JWT token)
+axios — API client, with interceptors for JWT attach + refresh-token retry on 401
+zod + react-hook-form — form validation (the "Buy Now" popup, login forms, product creation wizard)
+@stomp/stompjs + sockjs-client — WebSocket client for real-time order notifications (matches backend's Spring STOMP setup)
+react-i18next (or Next's built-in i18n routing) — Arabic + English, RTL support
+lucide-react — icons
+recharts — Admin dashboard charts (revenue, conversion)
+sonner — toast notifications (used for the live "new order" popup)
+
+
+
+FOLDER / ROUTE STRUCTURE
+
+app/
+├── (public)/
+│   ├── page.tsx                        // homepage — live/trending products grid
+│   ├── product/[slug]/page.tsx         // product landing page (SSR/ISR — critical for ad traffic speed)
+│   └── track/[orderId]/page.tsx        // public order status lookup, no login
+│
+├── (auth)/
+│   └── login/page.tsx                  // Admin + Trends Responsible login only (customers don't log in)
+│
+├── admin/
+│   ├── layout.tsx                      // protected layout, role check = ADMIN, includes live notification bell
+│   ├── dashboard/page.tsx              // revenue, conversion, SLA stats (recharts)
+│   ├── users/page.tsx                  // CRUD, role assignment
+│   ├── products/page.tsx               // list + approve/reject pending products
+│   ├── products/[id]/page.tsx
+│   ├── stock/page.tsx                  // stock table, adjust quantity, low-stock alerts
+│   ├── orders/page.tsx                 // all orders, filter/update status
+│   └── audit-log/page.tsx
+│
+├── trends/
+│   ├── layout.tsx                      // protected layout, role check = TRENDS_RESPONSIBLE (or ADMIN)
+│   ├── research/page.tsx               // trend research workspace (CRUD)
+│   ├── products/page.tsx               // own products list
+│   ├── products/new/page.tsx           // product creation wizard (info → variants → pricing → media → campaign)
+│   ├── products/[id]/edit/page.tsx
+│   ├── stock/page.tsx                  // same stock view as admin, scoped to own products
+│   ├── campaigns/page.tsx
+│   └── orders/page.tsx                 // orders for own products only
+│
+├── layout.tsx                          // root layout, providers (React Query, Zustand hydration, i18n)
+└── globals.css
+
+components/
+├── ui/                                  // shadcn primitives
+├── public/
+│   ├── ProductCard.tsx
+│   ├── ProductMediaViewer.tsx           // image/video carousel now, swappable for 3D viewer later
+│   ├── VariantSelector.tsx              // color/option picker
+│   ├── UrgencyCounter.tsx               // "X reserved in last 24h"
+│   ├── CountdownTimer.tsx
+│   └── BuyNowDialog.tsx                 // the reservation popup form
+├── dashboard/
+│   ├── NotificationBell.tsx             // WebSocket-driven live order alerts
+│   ├── StockTable.tsx
+│   ├── OrderStatusBadge.tsx
+│   └── DataTable.tsx                    // generic paginated table wrapper
+└── shared/
+    ├── Navbar.tsx
+    └── ProtectedRoute.tsx
+
+lib/
+├── api/
+│   ├── client.ts                        // axios instance, JWT interceptor, refresh-on-401 logic
+│   ├── products.ts                      // getProducts, getProductBySlug, createProduct, approveProduct...
+│   ├── orders.ts                        // createOrder, getOrders, getOrderTracking, updateOrderStatus
+│   ├── auth.ts                          // login, refreshToken
+│   ├── stock.ts                         // getStock, adjustStock
+│   ├── trends.ts
+│   └── campaigns.ts
+├── websocket.ts                         // STOMP client setup, connects to /ws, subscribes /topic/orders
+├── stores/
+│   └── authStore.ts                     // zustand: user, token, role, login/logout actions
+├── types/
+│   └── index.ts                         // TypeScript interfaces matching backend DTOs exactly
+└── utils/
+    └── formatters.ts                    // currency (QAR), date formatting
+
+middleware.ts                            // route protection by role at the edge, redirect unauthenticated dashboard access
+
+
+KEY PAGES — DETAILED REQUIREMENTS
+
+1. Product Landing Page (/product/[slug]) — the most important page in the app
+
+
+Use ISR (export const revalidate = 60) — page is cached and served fast to ad traffic, not rebuilt on every request.
+Sections: hero media (image/video carousel — build the component so it can be swapped for a 3D viewer later without restructuring the page), variant/color selector, price, urgency counter, countdown timer if launchEnd is set, "Buy Now" button.
+Buy Now opens BuyNowDialog: form fields (first name, last name, phone, email, delivery location), payment method selector (Card / Apple Pay / Google Pay / COD), validated with zod + react-hook-form.
+On submit: call POST /api/orders. If payment method is CARD/APPLE_PAY/GOOGLE_PAY, redirect the user to the checkout URL returned by the backend. If COD, show a confirmation screen immediately with the tracking link.
+Install the ad platform pixels (Meta Pixel, TikTok Pixel, Snap Pixel) on this page, firing a "conversion" event on successful order creation.
+
+
+2. Order Tracking (/track/[orderId])
+
+
+Public, no login. Shows order status timeline: Reserved → Confirmed → Processing → Out for Delivery → Delivered.
+Fetch via GET /api/orders/track/{trackingId}.
+
+
+3. Admin/Trends Dashboards
+
+
+Protected via middleware.ts checking JWT role claim — redirect to /login if missing/wrong role.
+NotificationBell: connects to the backend WebSocket (/ws, subscribe /topic/orders) on mount. On a new order event, show a toast (sonner) with product name + delivery location, and increment an unread badge. This must feel instant — no polling, pure WebSocket push.
+StockTable: paginated, shows product/variant/stock qty/status, inline "Adjust" action (Admin + Trends Responsible only — this page must not exist anywhere in the (public) route group).
+Product creation wizard (Trends Responsible): multi-step form — Info → Variants → Pricing → Media upload → (optional) Campaign linking. Submits as PENDING_APPROVAL.
+
+
+
+API CLIENT PATTERN (apply consistently)
+
+typescript// lib/api/client.ts
+// - baseURL from process.env.NEXT_PUBLIC_API_URL
+// - request interceptor: attach Authorization: Bearer <token> from authStore
+// - response interceptor: on 401, attempt refresh token once, retry original request; on refresh failure, logout + redirect /login
+
+All API functions return typed responses matching backend's ApiResponse<T> wrapper — unwrap .data in the API layer so components never deal with the wrapper directly. Use React Query for every GET (with sensible staleTime) and mutations (useMutation) for every POST/PUT with optimistic UI where it makes sense (e.g. stock adjustment).
+
+
+WEBSOCKET CLIENT SETUP
+
+typescript// lib/websocket.ts
+// Connect using @stomp/stompjs + sockjs-client to `${NEXT_PUBLIC_API_URL}/ws`
+// On connect: subscribe to `/topic/orders`
+// On message: parse JSON payload {orderId, productName, variant, deliveryLocation, customerName, customerPhone}
+// Expose a simple hook: useOrderNotifications() returning the latest notifications array + connection status
+// Only initialize this connection inside admin/trends layouts — never in the public routes
+
+
+ENVIRONMENT VARIABLES (.env.local)
+
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_WS_URL=http://localhost:8080/ws
+NEXT_PUBLIC_META_PIXEL_ID=
+NEXT_PUBLIC_TIKTOK_PIXEL_ID=
+NEXT_PUBLIC_SNAP_PIXEL_ID=
+
+
+PERFORMANCE REQUIREMENTS
+
+
+Product landing pages: ISR, optimized images (next/image), no client-side waterfall fetches for above-the-fold content.
+Fonts: use next/font (self-hosted, no external font request blocking render).
+Split dashboard code from public code — the public bundle should not include Recharts, the WebSocket client, or dashboard-only components.
+Lighthouse mobile performance target: 90+ on the product landing page.
+
+
+
+ADDITIONAL RULES FOR CURSOR
+
+
+Every API call goes through lib/api/* — no fetch/axios calls directly inside components.
+Every form uses react-hook-form + zod schema validation, matching backend validation rules exactly (e.g. phone format).
+TypeScript strict mode on — no any types for API responses; define interfaces in lib/types matching backend DTOs.
+Public routes must never import or reference stock/admin/trends components, even indirectly — keep the bundle boundary clean.
+All currency displayed as QAR, formatted consistently via formatters.ts.
+Arabic/English: wrap the app in an i18n provider from the start, even if only English content is written first — retrofitting RTL later is painful, building it in now is cheap.
